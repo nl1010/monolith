@@ -1,5 +1,5 @@
 //Libraries 
-#include <Wire.h>
+#include <Wire.h> // For I2C communication 
 
 
 //Global Vars 
@@ -13,8 +13,6 @@ int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
 
 //Settings
 void setup() {
-
-
    pinMode(BREATH_LED_PIN,OUTPUT);
   
 }
