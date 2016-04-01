@@ -12,6 +12,7 @@ int BREATH_GAP = 2000 ; //in ms, gap between two breathing time
 int MASTER_ID = 10;
 int SLAVE1_ID = 11;  
 int SLAVE2_ID = 12;  
+int SLAVE3_ID = 13;
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 //Linked Vars 
@@ -36,7 +37,6 @@ void loop() {
     }
   }
 
-  delay(500);
   Wire.requestFrom(SLAVE2_ID,1);
   while(Wire.available()>0) {
     char sig = Wire.read();
@@ -45,7 +45,16 @@ void loop() {
        led_breath(BREATH_LED_PIN); //let's flash
     }
   }  
-  delay (500);
+
+
+  Wire.requestFrom(SLAVE3_ID,1);
+  while(Wire.available()>0) {
+    char sig = Wire.read();
+    Serial.print(sig);
+    if (sig == '3') {
+       led_breath(BREATH_LED_PIN); //let's flash
+    }
+  } 
 }
 
 

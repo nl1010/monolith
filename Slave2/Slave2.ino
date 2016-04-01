@@ -12,6 +12,8 @@ int BREATH_GAP = 2000 ; //in ms, gap between two breathing time
 int MASTER_ID = 10;
 int SLAVE1_ID = 11;  
 int SLAVE2_ID = 12;  
+int SLAVE3_ID = 13;
+
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 //Linked Vars 
@@ -20,8 +22,11 @@ int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
 // flags 
 int shining = 0;
 
+//CURRENT DEVICE ID , change for swap position   
+int CURRENT_DEVICE = SLAVE2_ID;
+
 void setup() {
-  Wire.begin(SLAVE2_ID);
+  Wire.begin(CURRENT_DEVICE);
   Serial.begin(9600);
   pinMode(BREATH_LED_PIN,OUTPUT);
 

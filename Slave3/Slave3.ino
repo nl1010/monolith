@@ -1,7 +1,6 @@
 #include <Wire.h>
 
 //Global Vars///
-
 // LED
 int BREATH_LED_PIN = 5;
 int MAX_LED_STRENGTH = 50; //MAX = 255 
@@ -13,6 +12,7 @@ int BREATH_GAP = 2000 ; //in ms, gap between two breathing time
 int MASTER_ID = 10;
 int SLAVE1_ID = 11;  
 int SLAVE2_ID = 12;  
+int SLAVE3_ID = 13;
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
 
 //Linked Vars 
@@ -21,9 +21,9 @@ int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
 // flags 
 int shining = 0;
 
-
 //CURRENT DEVICE ID , change for swap position   
-int CURRENT_DEVICE = SLAVE1_ID;
+int CURRENT_DEVICE = SLAVE3_ID;
+
 void setup() {
   Wire.begin(CURRENT_DEVICE);
   Serial.begin(9600);
@@ -32,20 +32,21 @@ void setup() {
   // listen from master 
 //  Wire.onReceive(receiveEvent);
     Wire.onRequest(requestEvent);
-
 }
 
 void loop() {
    if (shining == 1) {
+    Serial.println("Shinning");
     led_breath(BREATH_LED_PIN);
-    shining = 0;
+    shining = 0; //return flag
+    Serial.println("flag return");
    }
-   // shining = 0; //MUST PUT INSIDE IF SENTENCE OTHERWISE MAY MISSING 
 }
 
 void requestEvent(){
   // cannot delay, must use flag to execute local event
-   Wire.write('1');
+   Serial.println("get command");
+   Wire.write('3');
    shining = 1;
 //  delay(5000);
 //  
@@ -66,6 +67,7 @@ void led_breath(int breathpin){
     analogWrite(breathpin,i);
     delay(BREATH_STEP);
   }
- // delay(BREATH_GAP);
+  Serial.println("Shinning off");
+  //delay(BREATH_GAP);
 }
 
