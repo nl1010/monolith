@@ -34,8 +34,9 @@ void setup() {
 void loop() {
    if (shining == 1) {
     led_breath(BREATH_LED_PIN);
+    shining = 0;
    }
-   shining = 0;
+   // shining = 0; //MUST PUT INSIDE IF SENTENCE OTHERWISE MAY MISSING 
 }
 
 void requestEvent(){
