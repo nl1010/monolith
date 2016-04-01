@@ -30,18 +30,22 @@ void loop() {
   Wire.requestFrom(SLAVE1_ID,1);
   while(Wire.available()>0) {
     char sig = Wire.read();
+    Serial.print(sig);
     if (sig == '1') {
        led_breath(BREATH_LED_PIN); //let's flash
     }
   }
-  
+
+  delay(500);
   Wire.requestFrom(SLAVE2_ID,1);
   while(Wire.available()>0) {
     char sig = Wire.read();
+    Serial.print(sig);
     if (sig == '2') {
        led_breath(BREATH_LED_PIN); //let's flash
     }
   }  
+  delay (500);
 }
 
 

@@ -61,6 +61,6 @@ void led_breath(int breathpin){
     analogWrite(breathpin,i);
     delay(BREATH_STEP);
   }
-  delay(BREATH_GAP);
+ // delay(BREATH_GAP);
 }
 

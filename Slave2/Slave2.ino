@@ -28,18 +28,20 @@ void setup() {
   // listen from master 
 //  Wire.onReceive(receiveEvent);
     Wire.onRequest(requestEvent);
-
 }
 
 void loop() {
    if (shining == 1) {
+    Serial.println("Shinning");
     led_breath(BREATH_LED_PIN);
+    shining = 0; //return flag
+    Serial.println("flag return");
    }
-   shining = 0;
 }
 
 void requestEvent(){
   // cannot delay, must use flag to execute local event
+   Serial.println("get command");
    Wire.write('2');
    shining = 1;
 //  delay(5000);
@@ -61,6 +63,7 @@ void led_breath(int breathpin){
     analogWrite(breathpin,i);
     delay(BREATH_STEP);
   }
-  delay(BREATH_GAP);
+  Serial.println("Shinning off");
+  //delay(BREATH_GAP);
 }
 
