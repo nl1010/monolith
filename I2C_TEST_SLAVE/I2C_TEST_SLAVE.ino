@@ -19,7 +19,9 @@ int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
 
 //Settings
 void setup() {
-  Wire.begin(); // start I2C communication and nothing in() as the master device 
+  Wire.begin(11); // start I2C protocal and define device as #11
+  Wire.onReceive(receiveEvent); // register the device can receive bytes from the bus
+  Wire.onRequest(requestEvent); // register the device can receive the request command from the master  
   Serial.begin(9600);
   pinMode(BREATH_LED_PIN,OUTPUT);
 }
@@ -27,24 +29,21 @@ void setup() {
 
 //Main
 void loop() {
-  // vv I2C TRANSMISSION vv //
-  Wire.beginTransmission(SLAVE1_ID); 
-  Wire.write("hello");  // send to slave strings
-  Wire.endTransmission(SLAVE1_ID);
-  // ^^ I2C TRANSMISSION ^^ //
-
-  // vv I2C LISTENNING vv // 
-  Wire.requestFrom(SLAVE1_ID, 10); // request 1 byte from the target slave. 
-  while (Wire.available()>1) {    // keep listenning in each loop, until detected receive byte from the target slave do something futhur 
-    char c = Wire.read();
-    Serial.print(c);
-  }
-  char d = Wire.read();
-  Serial.print(d);
-  led_breath(BREATH_LED_PIN);
-  // ^^ I2C LISTENNING ^^ //
+  delay(100);
 }     
 
+void receiveEvent(int rev_len){
+  while( Wire.available()>1) {
+    char c = Wire.read();
+    Serial.print(c); // print each byte received 
+  }
+  char d = Wire.read();
+  Serial.println(d); 
+}
+
+void requestEvent(){
+  Wire.write("Get it");
+}
 
 // auxies 
 void led_breath(int breathpin){
