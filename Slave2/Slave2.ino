@@ -17,31 +17,33 @@ int SLAVE2_ID = 12;
 //Linked Vars 
 int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
 
+// flags 
+int shining = 0;
 
 void setup() {
-  Wire.begin(MASTER_ID);
+  Wire.begin(SLAVE2_ID);
   Serial.begin(9600);
   pinMode(BREATH_LED_PIN,OUTPUT);
+
+  // listen from master 
+//  Wire.onReceive(receiveEvent);
+    Wire.onRequest(requestEvent);
+
 }
 
 void loop() {
+   if (shining == 1) {
+    led_breath(BREATH_LED_PIN);
+   }
+   shining = 0;
+}
 
-
-  Wire.requestFrom(SLAVE1_ID,1);
-  while(Wire.available()>0) {
-    char sig = Wire.read();
-    if (sig == '1') {
-       led_breath(BREATH_LED_PIN); //let's flash
-    }
-  }
-  
-  Wire.requestFrom(SLAVE2_ID,1);
-  while(Wire.available()>0) {
-    char sig = Wire.read();
-    if (sig == '2') {
-       led_breath(BREATH_LED_PIN); //let's flash
-    }
-  }  
+void requestEvent(){
+  // cannot delay, must use flag to execute local event
+   Wire.write('2');
+   shining = 1;
+//  delay(5000);
+//  
 }
 
 
