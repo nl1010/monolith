@@ -34,7 +34,7 @@ void loop() {
   // ^^ I2C TRANSMISSION ^^ //
 
   // vv I2C LISTENNING vv // 
-  Wire.requestFrom(SLAVE1_ID, 10); // request 1 byte from the target slave. 
+  Wire.requestFrom(SLAVE1_ID, 10); // request 10 byte from the target slave. 
   while (Wire.available()>1) {    // keep listenning in each loop, until detected receive byte from the target slave do something futhur 
     char c = Wire.read();
     Serial.print(c);
