@@ -2,7 +2,8 @@
 
 void setup() {
    Wire.begin(10);
-     
+   Wire.beginTransmission(11);
+   Wire.  
 
 }
 

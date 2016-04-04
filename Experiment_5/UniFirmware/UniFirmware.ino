@@ -1,5 +1,19 @@
  #include <Wire.h>
 
+ 
+int SELF_NO = 1; // the first number in the array, which is M
+//vvvvvvv M-S Table -- shared to every module vvvvvvvv//
+int MASTER_ID = 10;
+int SLAVE1_ID = 11;  
+int SLAVE2_ID = 12;  
+int SLAVE3_ID = 13;
+int DEVICE_ID_ARRY[] = {10,  11,  12,  13,  14,  15}; 
+//                      M    S1   S2   S3   S4   S5
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
+
+
+ 
 //Global Vars///
 // LED
 int BREATH_LED_PIN = 5;
@@ -11,15 +25,7 @@ int BREATH_GAP = 2000 ; //in ms, gap between two breathing time
 //Tokens
 int age = 0; //everytime device inits the token is 0 
 
-//vvvvvvv M-S Table -- shared to every module vvvvvvvv//
-int MASTER_ID = 10;
-int SLAVE1_ID = 11;  
-int SLAVE2_ID = 12;  
-int SLAVE3_ID = 13;
-int DEVICE_ID_ARRY[] = {10,  11,  12,  13,  14,  15}; 
-//                      M    S1   S2   S3   S4   S5
-int SELF_NO = 0; // the first number in the array, which is M
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
 
 //Linked Vars 
 int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
@@ -87,25 +93,33 @@ STEP 2: the oldest one in the system will arrange broadcasting, and other one wi
 void receiveEvent (int len) {
    while (Wire.available()>0){
     char c = Wire.read();
-    Serial.print("Signal Received: ");
-    Serial.println(c);
     if (c == 'o') {
       age = age + 1;
-      Serial.print("New Device Detected , AT = ");
+      Serial.print("o signal received New Device Detected , AT = ");
       Serial.println(age);
       // UPDATING THE AGE LIST
       //1.5 tell everyone selfid and the age.
       BROADCAST_FLAG = 1;
+   } else if (c == 'b'){
+    String data = "";
+    data = data + (char)c;
+    while (Wire.available()>0){
+      data += (char)Wire.read();
+    }
+    Serial.print("Signal Received: ");
+    Serial.println(data);
    }
   }
 }
 
+
+/*when self age state changing, it need to tell outside its state ASAP*/
 void broadcastSelfState(){
         for (int i=0; i< (sizeof(DEVICE_ID_ARRY)/sizeof(char *));i++){ 
        if (i != SELF_NO) {   
          Wire.beginTransmission(DEVICE_ID_ARRY[i]);
          String data = "";
-         data = String("c_")+ DEVICE_ID_ARRY[SELF_NO] +String("_")+ age;
+         data = String("b_")+ DEVICE_ID_ARRY[SELF_NO] +String("_")+ age; //b is for 'boradcast'
          Wire.write(data.c_str());
          Serial.print("Tell ");
          Serial.print(DEVICE_ID_ARRY[i]);
@@ -115,6 +129,8 @@ void broadcastSelfState(){
        }
       }
 }
+
+
 
 /* Aux functions*/
 void led_breath(int breathpin){
@@ -128,6 +144,23 @@ void led_breath(int breathpin){
     delay(BREATH_STEP);
   }
   delay(BREATH_GAP);
+}
+
+
+//takes a string and separates it based on a given character and returns The item between the separating character
+/*e.g. for getValue("c_10,77",'_', 0-2) -> "c","10","77"*/
+String getValue(String data, char separator, int index){
+ int found = 0;
+  int strIndex[] = {0, -1 };
+  int maxIndex = data.length()-1;
+  for(int i=0; i<=maxIndex && found<=index; i++){
+  if(data.charAt(i)==separator || i==maxIndex){
+  found++;
+  strIndex[0] = strIndex[1]+1;
+  strIndex[1] = (i == maxIndex) ? i+1 : i;
+  }
+ }
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
 
