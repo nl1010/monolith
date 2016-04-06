@@ -11,6 +11,15 @@ int BREATH_GAP = 2000 ; //in ms, gap between two breathing time
 //Tokens
 int age = 0; //everytime device inits the token is 0 
 
+/*Living List
+  1.In living list, value position in the array corresponding to their device ID; 
+  2.0 means they are dead/offline. all number >0 is their actual age.
+*/
+
+
+int LIVING_LIST[100];  //generate an array that could contain 100 valubles, all init value is 0 <- tested 
+
+
 //vvvvvvv M-S Table -- shared to every module vvvvvvvv//
 int MASTER_ID = 10;
 int SLAVE1_ID = 11;  
@@ -56,13 +65,11 @@ void setup() {
 
 
 void loop() {
-
+  //broadcast handler
   if (BROADCAST_FLAG == 1){
     broadcastSelfState();
     BROADCAST_FLAG = 0;
-  }
-  // keep listenning 
-  
+  }  
   
 //  Wire.requestFrom(SLAVE1_ID,1);
 //  while(Wire.available()>0) {
@@ -87,15 +94,35 @@ STEP 2: the oldest one in the system will arrange broadcasting, and other one wi
 void receiveEvent (int len) {
    while (Wire.available()>0){
     char c = Wire.read();
-    Serial.print("Signal Received: ");
-    Serial.println(c);
+//    Serial.print("Signal Received: ");
+//    Serial.println(c);
+    /*if signal == ON from other device which means other device just attached, as the rule everyone 
+    still get the power will increse their age.*/
     if (c == 'o') {
-      age = age + 1;
+      // if it is docker, then its age should be oldest
+      if (SELF_NO == 0) {
+        age = 999;
+      } else {
+        age = age + 1;
+      }
       Serial.print("New Device Detected , AT = ");
       Serial.println(age);
-      // UPDATING THE AGE LIST
-      //1.5 tell everyone selfid and the age.
-      BROADCAST_FLAG = 1;
+      //1.5 update its own LIVING LIST and tell everyone selfid and the age.
+      LIVING_LIST[SELF_NO] = age;
+      BROADCAST_FLAG = 1;  //start broadcast selfstate. -- if put long code block here will have issue. should move to loop()
+   }
+
+   if (c == 'c'){
+    String data = "";
+    data = data + (char)c;
+    while (Wire.available()>0){
+      data += (char)Wire.read();
+    }
+    Serial.print("Signal Received: ");
+    Serial.println(data);
+    //TODO: processing data 
+    
+    updateLivingList(data);   
    }
   }
 }
@@ -116,6 +143,23 @@ void broadcastSelfState(){
       }
 }
 
+
+
+/*living list is a list of EVERYBODY's information INCLUDING ITSELF.
+It is keep updated once receive other's STATE BROADCAST SIGNAL.
+For searching this list, they will be able to know if he is the guy to control light signal.
+STEP 1. get the data string received, PRE: data must start with "c_[device ID]_[age]".  
+STEP 2. Stretch out age and store it into the LIVING_LIST[device_id]
+*/
+void updateLivingList(String data){
+  // data = "c_device_age"
+  String device_str = getValue(data,'_',1); 
+  String age_str = getValue(data,'_',2);
+  Serial.print ("updating agelist");
+  Serial.println(device_str+age_str);
+}
+
+
 /* Aux functions*/
 void led_breath(int breathpin){
     for (int i= MIN_LED_STRENGTH; i<=MAX_LED_STRENGTH; i++){
@@ -131,3 +175,25 @@ void led_breath(int breathpin){
 }
 
 
+<<<<<<< HEAD
+=======
+
+//takes a string and separates it based on a given character and returns The item between the separating character
+/*e.g. for getValue("c_10,77",'_', 0-2) -> "c","10","77"*/
+String getValue(String data, char separator, int index)
+{
+ int found = 0;
+  int strIndex[] = {
+0, -1  };
+  int maxIndex = data.length()-1;
+  for(int i=0; i<=maxIndex && found<=index; i++){
+  if(data.charAt(i)==separator || i==maxIndex){
+  found++;
+  strIndex[0] = strIndex[1]+1;
+  strIndex[1] = (i == maxIndex) ? i+1 : i;
+  }
+ }
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
+>>>>>>> e7afaaa3fdb5c579f045b83c961c54171a5745f8
