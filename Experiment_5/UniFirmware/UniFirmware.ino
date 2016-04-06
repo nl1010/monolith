@@ -1,15 +1,10 @@
  #include <Wire.h>
 
- 
-int SELF_NO = 1; // the first number in the array, which is M
-//vvvvvvv M-S Table -- shared to every module vvvvvvvv//
-int MASTER_ID = 10;
-int SLAVE1_ID = 11;  
-int SLAVE2_ID = 12;  
-int SLAVE3_ID = 13;
-int DEVICE_ID_ARRY[] = {10,  11,  12,  13,  14,  15}; 
+int SELF_NO = 0; // the first number in the array, which is M
+int DEVICE_ADDR_BOOK[] = {10,  11,  12,  13,  14,  15}; 
 //                      M    S1   S2   S3   S4   S5
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+int living_list[50];  //generate an array that could contain 50 valubles, all init value is 0 <- tested 
 
 
 
@@ -32,10 +27,15 @@ int BREATH_STEP = (BREATH_TIME / (MAX_LED_STRENGTH - MIN_LED_STRENGTH))/2;
 
 //FLAGS
 int BROADCAST_FLAG = 0;
+int UPDATE_LIVINGLIST_FLAG = 0;
+int UPDATE_SELF_LIVINGLIST_FLAG = 0;
+
+//Tempulate storage variable to serve flag functions 
+String received_data = "";
 
 // these should work after attached to the power source 
 void setup() {
-  Wire.begin(DEVICE_ID_ARRY[SELF_NO]);
+  Wire.begin(DEVICE_ADDR_BOOK[SELF_NO]);
   Serial.begin(9600);
   pinMode(BREATH_LED_PIN,OUTPUT);
 
@@ -44,14 +44,14 @@ void setup() {
   Wire.onReceive(receiveEvent);
   
   // broadcast itself and increse its token 
-  for (int i=0; i< (sizeof(DEVICE_ID_ARRY)/sizeof(char *));i++){ 
+  for (int i=0; i< (sizeof(DEVICE_ADDR_BOOK)/sizeof(char *));i++){ 
    if (i != SELF_NO) {
    
-   Wire.beginTransmission(DEVICE_ID_ARRY[i]);
+   Wire.beginTransmission(DEVICE_ADDR_BOOK[i]);
    Wire.write('o');
    Serial.print("broadcast to ");
-   Serial.println (DEVICE_ID_ARRY[i]);
-   Wire.endTransmission(DEVICE_ID_ARRY[i]);
+   Serial.println (DEVICE_ADDR_BOOK[i]);
+   Wire.endTransmission(DEVICE_ADDR_BOOK[i]);
    }
   }
    age = age+1;
@@ -66,6 +66,16 @@ void loop() {
   if (BROADCAST_FLAG == 1){
     broadcastSelfState();
     BROADCAST_FLAG = 0;
+  }
+
+  if (UPDATE_LIVINGLIST_FLAG == 1){
+    updateLivinglist(received_data);
+    UPDATE_LIVINGLIST_FLAG = 0;
+  }
+
+  if (UPDATE_SELF_LIVINGLIST_FLAG == 1){
+    updateSelfLivinglist();
+    UPDATE_SELF_LIVINGLIST_FLAG = 0;
   }
   // keep listenning 
   
@@ -97,17 +107,25 @@ void receiveEvent (int len) {
       age = age + 1;
       Serial.print("o signal received New Device Detected , AT = ");
       Serial.println(age);
-      // UPDATING THE AGE LIST
+      /*update self living status in the living list first */
+      UPDATE_SELF_LIVINGLIST_FLAG = 1;
       //1.5 tell everyone selfid and the age.
       BROADCAST_FLAG = 1;
-   } else if (c == 'b'){
+   } 
+   /*if receive other broadcasted live state then it will update their's living state*/
+   else if (c == 'b'){
     String data = "";
     data = data + (char)c;
     while (Wire.available()>0){
       data += (char)Wire.read();
+      delay(10);
     }
     Serial.print("Signal Received: ");
     Serial.println(data);
+    Serial.println("Start updating living list");
+    // then updating the list 
+    received_data = data; 
+    UPDATE_LIVINGLIST_FLAG = 1;
    }
   }
 }
@@ -115,20 +133,54 @@ void receiveEvent (int len) {
 
 /*when self age state changing, it need to tell outside its state ASAP*/
 void broadcastSelfState(){
-        for (int i=0; i< (sizeof(DEVICE_ID_ARRY)/sizeof(char *));i++){ 
+        for (int i=0; i< (sizeof(DEVICE_ADDR_BOOK)/sizeof(char *));i++){ 
        if (i != SELF_NO) {   
-         Wire.beginTransmission(DEVICE_ID_ARRY[i]);
+         Wire.beginTransmission(DEVICE_ADDR_BOOK[i]);
          String data = "";
-         data = String("b_")+ DEVICE_ID_ARRY[SELF_NO] +String("_")+ age; //b is for 'boradcast'
+         data = String("b_")+ DEVICE_ADDR_BOOK[SELF_NO] +String("_")+ age; //b is for 'boradcast'
          Wire.write(data.c_str());
          Serial.print("Tell ");
-         Serial.print(DEVICE_ID_ARRY[i]);
+         Serial.print(DEVICE_ADDR_BOOK[i]);
          Serial.print(" :");
          Serial.println (data.c_str());
-         Wire.endTransmission(DEVICE_ID_ARRY[i]);
+         Wire.endTransmission(DEVICE_ADDR_BOOK[i]);
        }
       }
 }
+
+void updateLivinglist(String data){
+  Serial.print("start updating with: ");
+  Serial.println(data);
+  int received_device_addr =  getValue(data,'_',1).toInt();
+  int received_age = getValue(data,'_',2).toInt();
+  living_list[received_device_addr] = received_age;
+  //debug
+  Serial.print("Updated Living List is :");
+   for (int i=0; i<50;i++){
+    Serial.print("[");
+    Serial.print(i);
+    Serial.print("]");
+    Serial.print(living_list[i]);
+
+
+   }  
+   Serial.println("");
+}
+
+
+void updateSelfLivinglist(){
+   living_list[DEVICE_ADDR_BOOK[SELF_NO]] = age;
+   //debug vvvv
+   Serial.print("Start update self... Updated Living List is :");
+   for (int i=0; i<50;i++){
+        Serial.print("[");
+    Serial.print(i);
+    Serial.print("]");
+    Serial.print(living_list[i]);
+   }  
+   Serial.println("");
+}
+
 
 
 
@@ -145,6 +197,8 @@ void led_breath(int breathpin){
   }
   delay(BREATH_GAP);
 }
+
+
 
 
 //takes a string and separates it based on a given character and returns The item between the separating character
